@@ -3,6 +3,7 @@ package gochain
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 )
@@ -19,14 +20,15 @@ const GenesisBlockHash = "000000000000000000000000000000000000000000000000000000
 
 // Blockchain represents blockchain structure
 type Blockchain struct {
-	difficulty          uint16
+	stream              io.ReadWriteSeeker
+	difficulty          uint8
 	genesisBlock        *Block
 	blocks              []Block
 	pendingTransactions []Transaction
 }
 
 // NewBlockchain creates a new empty Blockchain instance
-func NewBlockchain() Blockchain {
+func NewBlockchain(stream io.ReadWriteSeeker, difficulty uint8) Blockchain {
 	var bc Blockchain
 
 	bc.blocks = make([]Block, 1, 128)
@@ -36,13 +38,18 @@ func NewBlockchain() Blockchain {
 	bc.genesisBlock.Hash = GenesisBlockHash
 
 	bc.pendingTransactions = make([]Transaction, 0, 32)
+
+	bc.SetDifficulty(difficulty)
+	if stream != nil {
+		bc.attachStream(stream)
+	}
 	return bc
 }
 
 // SetDifficulty sets the blockchain difficulty to d
-func (bc *Blockchain) SetDifficulty(d int) error {
-	difficulty := uint16(d)
-	if difficulty < bc.difficulty {
+func (bc *Blockchain) SetDifficulty(d uint8) error {
+	difficulty := uint8(d)
+	if difficulty < bc.LastBlock().Difficulty {
 		return fmt.Errorf("you cannot decrease the blockchain difficulty %d", bc.difficulty)
 	}
 	if difficulty > MaxDifficulty {
@@ -52,12 +59,17 @@ func (bc *Blockchain) SetDifficulty(d int) error {
 	return nil
 }
 
+func (bc *Blockchain) attachStream(stream io.ReadWriteSeeker) {
+
+}
+
 // Verify checks that the block chain has a valid state
 func (bc *Blockchain) Verify() bool {
 	blocks := bc.blocks
 
 	for i := 1; i < len(blocks); i++ {
 		if blocks[i].PrevHash != blocks[i-1].Hash ||
+			blocks[i].Difficulty < blocks[i-1].Difficulty ||
 			blocks[i].Difficulty < bc.difficulty ||
 			blocks[i].verifyProofOfWork() == false ||
 			blocks[i].verifyHash() == false {
@@ -84,6 +96,16 @@ func (bc *Blockchain) PushTransaction(target, source string, amount uint64) bool
 func (bc *Blockchain) PushCoinbase(target string, amount uint64) {
 	t := NewTransaction(target, CoinbaseSource, amount)
 	bc.pendingTransactions = append(bc.pendingTransactions, t)
+}
+
+// LastBlock returns the last block of the keychain
+func (bc *Blockchain) LastBlock() *Block {
+	return &bc.blocks[len(bc.blocks)-1]
+}
+
+// IsEmpty checks whether there are any other blocks besides the genesis one
+func (bc *Blockchain) IsEmpty() bool {
+	return len(bc.blocks) == 1
 }
 
 func (bc *Blockchain) collectBalanceFor(target string) uint64 {

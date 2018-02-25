@@ -15,5 +15,5 @@ run:
 	go run $(MAIN_GO)
 
 build:
-	go build $(MAIN_GO)
+	go build -o $(DIRECTORY_PATH)/bin/goblockchain $(MAIN_GO) 
 

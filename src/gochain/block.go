@@ -13,7 +13,7 @@ type Block struct {
 	Timestamp    int64
 	PrevHash     string
 	Hash         string
-	Difficulty   uint16
+	Difficulty   uint8
 	Nonce        uint64
 }
 
@@ -42,12 +42,12 @@ func (b *Block) content() string {
 	return content
 }
 
-func (b *Block) mine(difficulty uint16) (time.Duration, error) {
+func (b *Block) mine(difficulty uint8) (time.Duration, error) {
 	if difficulty < 0 || difficulty > 255 {
 		return 0, fmt.Errorf("invalid difficulty value %d", difficulty)
 	}
 
-	var i uint16
+	var i uint8
 	var nonce uint64
 	var hash Blockhash
 

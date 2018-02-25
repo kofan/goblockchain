@@ -28,12 +28,12 @@ func NewBlockhashFromHexHash(hash string) (Blockhash, error) {
 	return blockhash, nil
 }
 
-func (bh *Blockhash) isZeroBit(nbit uint16) bool {
+func (bh *Blockhash) isZeroBit(nbit uint8) bool {
 	return (bh[nbit/8]>>uint(nbit%8))&1 == 0
 }
 
-func (bh *Blockhash) hasDifficulty(difficulty uint16) bool {
-	for i := uint16(0); i < difficulty; i++ {
+func (bh *Blockhash) hasDifficulty(difficulty uint8) bool {
+	for i := uint8(0); i < difficulty; i++ {
 		if !bh.isZeroBit(i) {
 			return false
 		}
