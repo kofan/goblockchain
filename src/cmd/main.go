@@ -82,7 +82,7 @@ func setup(bc *gochain.Blockchain) {
 }
 
 func process(bc *gochain.Blockchain) {
-	duration, err := bc.ProcessPendingTransactions()
+	duration, err := bc.ProcessPendingTrasactions()
 	if err != nil {
 		log.Fatal(err)
 	}
