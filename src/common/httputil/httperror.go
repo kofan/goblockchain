@@ -22,8 +22,8 @@ func NewHTTPErrorFromString(message string, statusCode int) *HTTPError {
 }
 
 func NewHTTPErrorFromReqRes(req *http.Request, resp *http.Response) *HTTPError {
-	message := fmt.Sprintf("HTTP request failed %s %s - %s", req.Method, req.URL, resp.Status)
-	return NewHTTPErrorFromString(message, resp.StatusCode)
+	msg := fmt.Sprintf("HTTP request failed %s %s - %s", req.Method, req.URL, resp.Status)
+	return NewHTTPErrorFromString(msg, resp.StatusCode)
 }
 
 func (err *HTTPError) Error() string {

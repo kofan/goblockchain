@@ -27,8 +27,8 @@ type Blockchain struct {
 
 	difficulty   uint8
 	genesisBlock *Block
-	blocks       []Block
-	pending      []Transaction
+	blocks       []*Block
+	pending      []*Transaction
 }
 
 // NewBlockchain creates a new empty Blockchain instance
@@ -36,13 +36,13 @@ func NewBlockchain(node Node, difficulty uint8) Blockchain {
 	var bc Blockchain
 
 	bc.currentNode = node
-	bc.blocks = make([]Block, 1, 128)
-	bc.blocks[0] = Block{}
+	bc.blocks = make([]*Block, 1, 128)
+	bc.blocks[0] = &Block{}
 
-	bc.genesisBlock = &bc.blocks[0]
+	bc.genesisBlock = bc.blocks[0]
 	bc.genesisBlock.Hash = GenesisBlockHash
 
-	bc.pending = make([]Transaction, 0, 32)
+	bc.pending = make([]*Transaction, 0, 32)
 
 	bc.SetDifficulty(difficulty)
 	return bc
@@ -90,26 +90,23 @@ func (bc *Blockchain) PushTransaction(target, source string, amount uint64) bool
 	if bc.ComputeBalanceFor(source) < amount {
 		return false
 	}
-
-	t := NewTransaction(target, source, amount)
-
-	bc.pending = append(bc.pending, t)
-	bc.SyncWithAdjacentNodes(SyncModePushFirst)
-
+	bc.appendTransaction(NewTransaction(target, source, amount))
 	return true
 }
 
 // PushCoinbase adds amount to the target from nowhere i.e. coninbase transaction
 func (bc *Blockchain) PushCoinbase(target string, amount uint64) {
-	t := NewTransaction(target, CoinbaseSource, amount)
+	bc.appendTransaction(NewTransaction(target, CoinbaseSource, amount))
+}
 
+func (bc *Blockchain) appendTransaction(t *Transaction) {
 	bc.pending = append(bc.pending, t)
 	bc.SyncWithAdjacentNodes(SyncModePushFirst)
 }
 
 // LastBlock returns the last block of the keychain
 func (bc *Blockchain) LastBlock() *Block {
-	return &bc.blocks[len(bc.blocks)-1]
+	return bc.blocks[len(bc.blocks)-1]
 }
 
 // IsEmpty checks whether there are any other blocks besides the genesis one
@@ -148,7 +145,7 @@ func (bc *Blockchain) ProcessPendingTrasactions() (time.Duration, error) {
 	}
 
 	block := NewBlock(bc.pending)
-	block.after(&bc.blocks[len(bc.blocks)-1])
+	block.after(bc.blocks[len(bc.blocks)-1])
 	duration, err := block.mine(bc.difficulty)
 
 	bc.blocks = append(bc.blocks, block)

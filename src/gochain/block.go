@@ -18,11 +18,15 @@ type Block struct {
 }
 
 // NewBlock creates new block for the specified list of transactions
-func NewBlock(transactions []Transaction) Block {
+func NewBlock(transactions []*Transaction) *Block {
 	ts := time.Now().Unix()
 	trxs := make([]Transaction, len(transactions))
-	copy(trxs, transactions)
-	return Block{trxs, ts, "", "", 0, 0}
+
+	for i, t := range transactions {
+		trxs[i] = *t
+	}
+
+	return &Block{trxs, ts, "", "", 0, 0}
 }
 
 func (b *Block) after(previous *Block) {
