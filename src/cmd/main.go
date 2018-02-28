@@ -16,6 +16,7 @@ import (
 
 var dataDir string
 
+var port = flag.Uint("port", 8080, "the network port where blochain will be run")
 var dataFile = flag.String("datafile", "blockchain.dat", "file where blockchain gets persisted")
 var difficulty = appflag.Difficulty("difficulty", 0, "difficulty of the blockchain [0-255]")
 var logLevel = appflag.LogLevel("loglevel", log.DebugLevel, "application log level")
@@ -29,30 +30,36 @@ func init() {
 func main() {
 	hostname, _ := os.Hostname()
 	pid := os.Getpid()
+	node := gochain.Node{
+		Name:    fmt.Sprintf("%s:%d", hostname, *port),
+		Address: fmt.Sprintf("http://127.0.0.1:%d", *port),
+	}
 
 	log.WithFields(log.Fields{
 		"hostname": hostname,
+		"port":     *port,
 		"pid":      pid,
 	}).Info("Blockchain demo has been started")
 
-	stream, err := openFile(*dataFile)
-	if err != nil {
-		log.Fatalf(`Cannot open/create the file "%s"`, *dataFile)
-	}
-	blockchain := gochain.NewBlockchain(stream, *difficulty)
-	setup(&blockchain)
+	// stream, err := openFile(*dataFile)
+	// if err != nil {
+	// 	log.Fatalf(`Cannot open/create the file "%s"`, *dataFile)
+	// }
+
+	blockchain := gochain.NewBlockchain(node, *difficulty)
+	setup(blockchain)
 
 	blockchain.PushCoinbase("Nickolay", 100)
 	blockchain.PushCoinbase("Anna", 100)
-	process(&blockchain)
+	process(blockchain)
 
 	blockchain.PushTransaction("Anna", "Nickolay", 50)
-	process(&blockchain)
+	process(blockchain)
 
 	blockchain.PushTransaction("Nickolay", "Anna", 10)
 	blockchain.PushTransaction("Nickolay", "Anna", 200)
 
-	fmt.Printf("%v", &blockchain)
+	fmt.Print(blockchain.FormatConsole())
 }
 
 func openFile(path string) (*os.File, error) {

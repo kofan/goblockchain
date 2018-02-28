@@ -1,0 +1,32 @@
+{{- $coinbase := .CoinbaseSource}}
+{{- $numBlocks := (len .Blocks)}}
+>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+======================== BLOCKS ========================
+{{- "\n"}}
+{{- range $i, $b := .Blocks}}
+{{- with $b}}
+PrevHash:    {{.PrevHash}}
+Hash         {{.Hash}}
+Timestamp:   {{.Timestamp}}
+Difficulty:  {{.Difficulty}}
+Nonce (PoW): {{.Nonce}}
+{{- if (ne 0 (len .Transactions))}}
+Transactions:
+  {{- range $i, $t := .Transactions}}
+  {{add $i 1}}.{{if (ne $t.Source $coinbase)}} From: "{{$t.Source}}"{{end}} To: "{{$t.Target}}" - {{$t.Amount}}Ƀ
+  {{- end}}
+{{- end}}
+{{- end}}
+{{- if not (eq (add $i 1) $numBlocks)}}
+-------------------
+{{- end}}
+{{- end}}
+{{- "\n"}}
+================= PENDING TRANSACTIONS =================
+{{- "\n"}}
+{{- range $i, $t := .Pending}}
+{{add $i 1}}.{{if (ne $t.Source $coinbase)}} From: "{{$t.Source}}"{{end}} To: "{{$t.Target}}" - {{$t.Amount}}Ƀ
+{{- end}}
+{{- "\n"}}
+========================================================
+>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<

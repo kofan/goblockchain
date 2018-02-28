@@ -6,10 +6,10 @@ import (
 
 // Node represents a single node in the blockhain decentralized net
 type Node struct {
-	name    string
-	address string
+	Name    string
+	Address string
 }
 
 func (n *Node) chainUrl() string {
-	return path.Join(n.address, "/chain")
+	return path.Join(n.Address, "/chain")
 }

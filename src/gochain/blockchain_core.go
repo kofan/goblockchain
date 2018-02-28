@@ -1,10 +1,10 @@
 package gochain
 
 import (
-	"encoding/json"
+	"bytes"
 	"fmt"
 	"io"
-	"strings"
+	"text/template"
 	"time"
 )
 
@@ -17,6 +17,17 @@ const CoinbaseSource = "$coinbase$"
 // GenesisBlockHash is a hash for the blockchain genesis block
 // analogous to strings.Repeat("0", 64)
 const GenesisBlockHash = "0000000000000000000000000000000000000000000000000000000000000000"
+
+var tplFuncs = template.FuncMap{
+	"add": func(a, b int) int {
+		return a + b
+	},
+}
+var tpl = template.Must(template.
+	New("templates").
+	Funcs(tplFuncs).
+	ParseGlob("templates/gochain/*.gotmpl"),
+)
 
 // Blockchain represents blockchain structure
 type Blockchain struct {
@@ -32,7 +43,7 @@ type Blockchain struct {
 }
 
 // NewBlockchain creates a new empty Blockchain instance
-func NewBlockchain(node Node, difficulty uint8) Blockchain {
+func NewBlockchain(node Node, difficulty uint8) *Blockchain {
 	var bc Blockchain
 
 	bc.currentNode = node
@@ -45,7 +56,7 @@ func NewBlockchain(node Node, difficulty uint8) Blockchain {
 	bc.pending = make([]*Transaction, 0, 32)
 
 	bc.SetDifficulty(difficulty)
-	return bc
+	return &bc
 }
 
 // NewBlockchainFromStream creates a new Blockchin instance from a stream of data
@@ -155,19 +166,18 @@ func (bc *Blockchain) ProcessPendingTrasactions() (time.Duration, error) {
 	return duration, err
 }
 
-func (bc *Blockchain) String() string {
-	blocks, _ := json.MarshalIndent(bc.blocks, "", "  ")
-	pending, _ := json.MarshalIndent(bc.pending, "", "  ")
+func (bc *Blockchain) FormatConsole() string {
+	var buf bytes.Buffer
 
-	return strings.Join([]string{
-		"\n",
-		"--------------------------------------------------------",
-		"======================== BLOCKS ========================",
-		string(blocks),
-		"================= PENDING TRANSACTIONS =================",
-		string(pending),
-		"========================================================",
-		"--------------------------------------------------------",
-		"\n\n",
-	}, "\n")
+	err := tpl.ExecuteTemplate(&buf, "console.gotmpl", struct {
+		CoinbaseSource string
+		Blocks         []*Block
+		Pending        []*Transaction
+	}{CoinbaseSource, bc.blocks, bc.pending})
+
+	if err != nil {
+		panic(err)
+	}
+
+	return buf.String()
 }
